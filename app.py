@@ -1,8 +1,24 @@
 ﻿from flask import Flask, request, render_template, redirect, url_for, session
 import subprocess
+import math
 
 app = Flask(__name__)
 app.secret_key = "crypto_lab_secret_key"
+
+
+def is_prime(n: int) -> bool:
+    if n <= 1:
+        return False
+    if n <= 3:
+        return True
+    if n % 2 == 0 or n % 3 == 0:
+        return False
+    i = 5
+    while i * i <= n:
+        if n % i == 0 or n % (i + 2) == 0:
+            return False
+        i += 6
+    return True
 
 @app.route("/", methods=["GET", "POST"])
 def shift_cipher():
@@ -10,7 +26,7 @@ def shift_cipher():
     error = ""
     
     # Read the code file
-    with open("shiftc.py", "r") as f:
+    with open("shiftc.py", "r", encoding="utf-8", errors="replace") as f:
         code = f.read()
 
     if request.method == "POST":
@@ -26,6 +42,8 @@ def shift_cipher():
                 ["python", "shiftc.py"],
                 input=f"{key}\n{text}\n",
                 text=True,
+                encoding="utf-8",
+                errors="replace",
                 capture_output=True
             )
 
@@ -49,7 +67,7 @@ def hill_cipher():
     error = ""
     
     # Read the code file
-    with open("hillc.py", "r") as f:
+    with open("hillc.py", "r", encoding="utf-8", errors="replace") as f:
         code = f.read()
 
     if request.method == "POST":
@@ -74,6 +92,8 @@ def hill_cipher():
                 ["python", "hillc.py"],
                 input=input_data,
                 text=True,
+                encoding="utf-8",
+                errors="replace",
                 capture_output=True
             )
 
@@ -118,7 +138,7 @@ def playfair_cipher():
     error = ""
     
     # Read the code file
-    with open("playfair.py", "r") as f:
+    with open("playfair.py", "r", encoding="utf-8", errors="replace") as f:
         code = f.read()
 
     if request.method == "POST":
@@ -131,10 +151,12 @@ def playfair_cipher():
             session["playfair_text"] = text
 
             process = subprocess.run(
-                ["python", "playfair.py"],
-                input=f"{key}\n{text}\n",
-                text=True,
-                capture_output=True
+                 ["python", "playfair.py"],
+                 input=f"{key}\n{text}\n",
+                 text=True,
+                 encoding="utf-8",
+                 errors="replace",
+                 capture_output=True
             )
 
             session["playfair_output"] = process.stdout
@@ -157,7 +179,7 @@ def des_cipher():
     error = ""
     
     # Read the code file
-    with open("des.py", "r") as f:
+    with open("des.py", "r", encoding="utf-8", errors="replace") as f:
         code = f.read()
 
     if request.method == "POST":
@@ -176,10 +198,12 @@ def des_cipher():
                 raise ValueError("Key must be exactly 16 hex characters (64 bits)")
 
             process = subprocess.run(
-                ["python", "des.py"],
-                input=f"{plaintext}\n{key}\n",
-                text=True,
-                capture_output=True
+                 ["python", "des.py"],
+                 input=f"{plaintext}\n{key}\n",
+                 text=True,
+                 encoding="utf-8",
+                 errors="replace",
+                 capture_output=True
             )
 
             # Filter output to remove input prompts
@@ -217,7 +241,7 @@ def aes_cipher():
     error = ""
     
     # Read the code file
-    with open("aes.py", "r") as f:
+    with open("aes.py", "r", encoding="utf-8", errors="replace") as f:
         code = f.read()
 
     if request.method == "POST":
@@ -236,10 +260,12 @@ def aes_cipher():
                 raise ValueError("Key must be exactly 32 hex characters (128 bits)")
 
             process = subprocess.run(
-                ["python", "aes.py"],
-                input=f"{plaintext}\n{key}\n",
-                text=True,
-                capture_output=True
+                 ["python", "aes.py"],
+                 input=f"{plaintext}\n{key}\n",
+                 text=True,
+                 encoding="utf-8",
+                 errors="replace",
+                 capture_output=True
             )
 
             # Filter output to remove input prompts
@@ -271,13 +297,123 @@ def aes_cipher():
 
     return render_template("aes.html", output=output, error=error, code=code, plaintext=plaintext, key=key)
 
+@app.route("/rsa", methods=["GET", "POST"])
+def rsa_cipher():
+    output = ""
+    error = ""
+    # Read the code file
+    with open("rsa.py", "r", encoding="utf-8", errors="replace") as f:
+        code = f.read()
+
+    if request.method == "POST":
+        try:
+            p = request.form["p"].strip()
+            q = request.form["q"].strip()
+            e = request.form.get("e", "").strip()
+            message = request.form["message"].strip()
+
+            # Validate integers and primality server-side so UI shows errors immediately
+            try:
+                p_int = int(p)
+                q_int = int(q)
+            except ValueError:
+                session["rsa_error"] = "Error: p and q must be integers."
+                return redirect(url_for("rsa_cipher"))
+
+            if not is_prime(p_int):
+                session["rsa_error"] = f"Error: p = {p_int} is not prime."
+                return redirect(url_for("rsa_cipher"))
+            if not is_prime(q_int):
+                session["rsa_error"] = f"Error: q = {q_int} is not prime."
+                return redirect(url_for("rsa_cipher"))
+            if p_int == q_int:
+                session["rsa_error"] = "Error: p and q must be different primes."
+                return redirect(url_for("rsa_cipher"))  
+
+            # Preserve values in session
+            session["rsa_p"] = p
+            session["rsa_q"] = q
+            session["rsa_e"] = e
+            session["rsa_message"] = message
+
+            # Require e and validate it server-side against phi before running rsa.py
+            if not e:
+                session["rsa_error"] = "Error: e is required. Provide integer e satisfying 1 < e < φ(n) and gcd(e, φ(n)) = 1."
+                return redirect(url_for("rsa_cipher"))
+
+            try:
+                e_int = int(e)
+            except ValueError:
+                session["rsa_error"] = "Error: e must be an integer."
+                return redirect(url_for("rsa_cipher"))
+
+            phi = (p_int - 1) * (q_int - 1)
+            # Range check with detail
+            if not (1 < e_int < phi):
+                session["rsa_error"] = f"Error: e={e_int} is out of valid range. Required: 1 < e < φ(n)={phi}."
+                return redirect(url_for("rsa_cipher"))
+
+            # Coprimality check with gcd detail
+            g = math.gcd(e_int, phi)
+            if g != 1:
+                session["rsa_error"] = (
+                    f"Error: e={e_int} is not coprime with φ(n)={phi}. "
+                    f"gcd(e, φ(n)) = {g}. Choose an e where gcd(e, φ(n)) = 1 (e.g., 3, 5, 17, 65537 if valid)."
+                )
+                return redirect(url_for("rsa_cipher"))
+
+            # Prepare inputs for rsa.py (it expects p, q, e, message in sequence)
+            # If e is empty, send a blank line so rsa.py can auto-select; otherwise send the provided e.
+            input_data = f"{p}\n{q}\n{e}\n{message}\n"
+
+            process = subprocess.run(
+                 ["python", "rsa.py"],
+                 input=input_data,
+                 text=True,
+                 encoding="utf-8",
+                 errors="replace",
+                 capture_output=True
+            )
+
+            # Filter out input prompts from output
+            full_output = process.stdout + process.stderr
+            lines_to_remove = [
+                "Enter prime p:",
+                "Enter prime q:",
+                "Choose e from valid values:",
+                "Enter message (integer < n):",
+            ]
+            filtered_lines = []
+            for line in full_output.split('\n'):
+                if any(prompt in line for prompt in lines_to_remove):
+                    continue
+                filtered_lines.append(line)
+
+            filtered_output = '\n'.join(filtered_lines).strip()
+            session["rsa_output"] = filtered_output
+        except Exception as exc:
+            session["rsa_error"] = f"Error: {str(exc)}"
+
+        return redirect(url_for("rsa_cipher"))
+
+    # Get from session and clear
+    output = session.pop("rsa_output", "")
+    error = session.pop("rsa_error", "")
+    p = session.pop("rsa_p", "")
+    q = session.pop("rsa_q", "")
+    e = session.pop("rsa_e", "")
+    message = session.pop("rsa_message", "")
+
+    return render_template("rsa.html", output=output, error=error, code=code, p=p, q=q, e=e, message=message)
+
+
 @app.route("/primality", methods=["GET", "POST"])
 def primality_test():
     output = ""
     error = ""
     
     # Read the code file
-    with open("primality_test.py", "r") as f:
+    with open("primality_test.py", "r", encoding="utf-8", errors="replace") as f:
         code = f.read()
 
     if request.method == "POST":
@@ -295,10 +431,12 @@ def primality_test():
                 raise ValueError("Please enter a positive integer.")
 
             process = subprocess.run(
-                ["python", "primality_test.py"],
-                input=f"{number}\n{method}\n",
-                text=True,
-                capture_output=True
+                 ["python", "primality_test.py"],
+                 input=f"{number}\n{method}\n",
+                 text=True,
+                 encoding="utf-8",
+                 errors="replace",
+                 capture_output=True
             )
 
             # Filter output to remove input prompts

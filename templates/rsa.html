@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>RSA - Cryptography Lab</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 0; padding: 20px; background-color: #eef2f5; }
+        .wrapper { display: flex; max-width: 900px; margin: 0 auto; gap: 15px; }
+        .sidebar { width: 180px; background: #fff; padding: 15px; border: 1px solid #ddd; }
+        .sidebar h3 { margin-top: 0; color: #333; border-bottom: 2px solid #4a7c59; padding-bottom: 8px; }
+        .sidebar a { display: block; padding: 10px 8px; color: #333; text-decoration: none; border-left: 3px solid transparent; }
+        .sidebar a:hover { background: #f0f0f0; }
+        .sidebar a.active { border-left-color: #4a7c59; background: #f5f5f5; font-weight: bold; }
+        .content { flex: 1; background: #fff; padding: 25px; border: 1px solid #ddd; }
+        h1 { color: #2c3e50; margin-top: 0; }
+        .subtitle { color: #666; margin-bottom: 20px; }
+        label { display: block; margin-top: 15px; margin-bottom: 5px; font-weight: bold; color: #333; }
+        input[type="text"], input[type="number"] { width: 100%; padding: 10px; border: 1px solid #bbb; box-sizing: border-box; }
+        input:focus { outline: none; border-color: #4a7c59; }
+        .hint { font-size: 12px; color: #777; margin-top: 4px; }
+        .btn { margin-top: 20px; padding: 12px 25px; background: #4a7c59; color: white; border: none; cursor: pointer; font-size: 14px; }
+        .btn:hover { background: #3d6b4a; }
+        .btn-secondary { background: #f5f5f5; color: #333; border: 1px solid #ccc; }
+        .btn-secondary:hover { background: #e8e8e8; }
+        .output { margin-top: 25px; padding: 15px; background: #f8f9fa; border-left: 4px solid #4a7c59; }
+        .output h3 { margin-top: 0; color: #2c3e50; }
+        .output pre { white-space: pre-wrap; font-family: Consolas, monospace; font-size: 13px; margin: 0; background: #fff; padding: 10px; border: 1px solid #eee; max-height: 500px; overflow-y: auto; }
+        .error { border-left-color: #c0392b; background: #fdeaea; }
+        .error h3 { color: #c0392b; }
+        .code-section { margin-top: 20px; background: #2d2d2d; color: #ccc; padding: 15px; font-family: Consolas, monospace; font-size: 13px; white-space: pre; overflow-x: auto; display: none; }
+    </style>
+</head>
+<body>
+    <div class="wrapper">
+        <div class="sidebar">
+            <h3>Exercises</h3>
+            <a href="/">Shift Cipher</a>
+            <a href="/hill">Hill Cipher</a>
+            <a href="/playfair">Playfair Cipher</a>
+            <a href="/primality">Primality Testing</a>
+            <a href="/des">DES Cipher</a>
+            <a href="/aes">AES Cipher</a>
+            <a href="/rsa" class="active">RSA</a>
+        </div>
+
+        <div class="content">
+            <h1>RSA</h1>
+            <p class="subtitle">RSA key generation, encryption and decryption (integer inputs)</p>
+
+            <form method="post">
+                <label>Prime p:</label>
+                <input type="text" name="p" placeholder="Enter prime p" value="{{ p or '' }}" required>
+
+                <label>Prime q:</label>
+                <input type="text" name="q" placeholder="Enter prime q" value="{{ q or '' }}" required>
+
+                <label>Choose e (required):</label>
+                <input type="text" name="e" placeholder="Enter e from valid values" value="{{ e or '' }}" required>
+                <label>Message :</label>
+                <input type="text" name="message" placeholder="Enter integer message" value="{{ message or '' }}" required>
+
+                <button type="submit" class="btn">Run RSA</button>
+            </form>
+
+            <button type="button" class="btn btn-secondary" onclick="toggleCode()" style="margin-top:15px;">See Code</button>
+            <div id="codeBox" class="code-section">{{ code }}</div>
+            <script>
+                function toggleCode() {
+                    var box = document.getElementById('codeBox');
+                    if (box.style.display === 'none') { box.style.display = 'block'; } else { box.style.display = 'none'; }
+                }
+            </script>
+
+            {% if error %}
+            <div class="output error">
+                <h3>Error</h3>
+                <p>{{ error }}</p>
+            </div>
+            {% endif %}
+
+            {% if output %}
+            <div class="output">
+                <h3>Results</h3>
+                <pre>{{ output }}</pre>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</body>
+</html>
