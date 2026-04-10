@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>SHA-256 Hashing - Cryptography Lab</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #eef2f5;
+        }
+        .wrapper {
+            display: flex;
+            max-width: 900px;
+            margin: 0 auto;
+            gap: 15px;
+        }
+        .sidebar {
+            width: 180px;
+            background: #fff;
+            padding: 15px;
+            border: 1px solid #ddd;
+        }
+        .sidebar h3 {
+            margin-top: 0;
+            color: #333;
+            border-bottom: 2px solid #4a7c59;
+            padding-bottom: 8px;
+        }
+        .sidebar a {
+            display: block;
+            padding: 10px 8px;
+            color: #333;
+            text-decoration: none;
+            border-left: 3px solid transparent;
+        }
+        .sidebar a:hover {
+            background: #f0f0f0;
+        }
+        .sidebar a.active {
+            border-left-color: #4a7c59;
+            background: #f5f5f5;
+            font-weight: bold;
+        }
+        .content {
+            flex: 1;
+            background: #fff;
+            padding: 25px;
+            border: 1px solid #ddd;
+        }
+        h1 {
+            color: #2c3e50;
+            margin-top: 0;
+        }
+        .subtitle {
+            color: #666;
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-top: 15px;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #333;
+        }
+        input[type="text"] {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #bbb;
+            box-sizing: border-box;
+            font-family: Consolas, monospace;
+        }
+        input:focus {
+            outline: none;
+            border-color: #4a7c59;
+        }
+        .hint {
+            font-size: 12px;
+            color: #777;
+            margin-top: 4px;
+        }
+        .btn {
+            margin-top: 20px;
+            padding: 12px 25px;
+            background: #4a7c59;
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .btn:hover {
+            background: #3d6b4a;
+        }
+        .btn-secondary {
+            background: #f5f5f5;
+            color: #333;
+            border: 1px solid #ccc;
+        }
+        .btn-secondary:hover {
+            background: #e8e8e8;
+        }
+        .output {
+            margin-top: 25px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-left: 4px solid #4a7c59;
+        }
+        .output h3 {
+            margin-top: 0;
+            color: #2c3e50;
+        }
+        .step {
+            margin: 15px 0;
+            padding: 12px;
+            background: #fff;
+            border: 1px solid #eee;
+            border-left: 3px solid #4a7c59;
+        }
+        .step h4 {
+            margin: 0 0 8px 0;
+            color: #4a7c59;
+            font-size: 14px;
+        }
+        .step p {
+            margin: 0;
+            font-family: Consolas, monospace;
+            font-size: 12px;
+            word-break: break-all;
+        }
+        .result-row {
+            margin: 10px 0;
+            padding: 10px;
+            background: #fff;
+            border: 1px solid #eee;
+        }
+        .result-row strong {
+            color: #4a7c59;
+        }
+        .error {
+            border-left-color: #c0392b;
+            background: #fdeaea;
+        }
+        .error h3 {
+            color: #c0392b;
+        }
+        .code-section {
+            margin-top: 20px;
+            background: #fff;
+            color: #000;
+            padding: 15px;
+            font-family: Consolas, monospace;
+            font-size: 13px;
+            white-space: pre;
+            overflow-x: auto;
+            display: none;
+            border: 1px solid #ddd;
+        }
+    </style>
+</head>
+<body>
+    <div class="wrapper">
+        <div class="sidebar">
+            <h3>Exercises</h3>
+            <a href="/">Shift Cipher</a>
+            <a href="/hill">Hill Cipher</a>
+            <a href="/playfair">Playfair Cipher</a>
+            <a href="/primality">Primality Testing</a>
+            <a href="/des">DES Cipher</a>
+            <a href="/aes">AES Cipher</a>
+            <a href="/rsa">RSA</a>
+            <a href="/diffie">Diffie-Hellman</a>
+            <a href="/sha256" class="active">SHA-256</a>
+        </div>
+        
+        <div class="content">
+            <h1>SHA-256 Hashing</h1>
+            <p class="subtitle">Secure Hash Algorithm 256-bit - Generate cryptographic hashes</p>
+            
+            <form method="post">
+                <label>Message:</label>
+                <input type="text" name="message" placeholder="Enter text to hash" value="{{ message or '' }}" required>
+                
+                <button type="submit" class="btn">Generate Hash</button>
+            </form>
+            
+            <button type="button" class="btn btn-secondary" onclick="toggleCode()" style="margin-top:15px;">See Code</button>
+            
+            <div id="codeBox" class="code-section">{{ code }}</div>
+            
+            <script>
+                function toggleCode() {
+                    var box = document.getElementById('codeBox');
+                    if (box.style.display === 'none') {
+                        box.style.display = 'block';
+                    } else {
+                        box.style.display = 'none';
+                    }
+                }
+            </script>
+            
+            {% if error %}
+            <div class="output error">
+                <h3>Error</h3>
+                <p>{{ error }}</p>
+            </div>
+            {% endif %}
+            
+            {% if output %}
+            <div class="output">
+                <h3>Results</h3>
+                <div class="result-row">
+                    <strong>Input Message:</strong> {{ message }}
+                </div>
+                
+                <div class="step">
+                    <h4>Step 1: Message Length</h4>
+                    <p>Original length: {{ input_length }} bits</p>
+                </div>
+                
+                <div class="step">
+                    <h4>Step 2: Padding Applied</h4>
+                    <p>Message padded from {{ input_length }} to {{ steps.padded_length }} bits</p>
+                </div>
+                
+                <div class="step">
+                    <h4>Step 3: Initial Hash Values (H0-H7)</h4>
+                    {% for h in steps.initial_H %}
+                    <p>H{{ loop.index0 }}: {{ h }}</p>
+                    {% endfor %}
+                </div>
+                
+                <div class="step">
+                    <h4>Step 4: Block Processing</h4>
+                    {% for block in steps.blocks %}
+                    <div style="margin-top: 15px; padding: 10px; background: #f0f0f0; border-radius: 4px;">
+                        <h5>Block {{ loop.index }}</h5>
+                        
+                        <div style="margin: 10px 0;">
+                            <strong>Message Schedule (W) - First 16 values:</strong>
+                            {% for w in block.W_initial %}
+                            <span style="display: inline-block; margin: 2px; font-family: monospace; font-size: 11px; background: #e0e0e0; padding: 2px 4px;">{{ w }}</span>
+                            {% endfor %}
+                        </div>
+                        
+                        <div style="margin: 10px 0;">
+                            <strong>Message Schedule Expanded (W16-W23):</strong>
+                            {% for w in block.W_expanded %}
+                            <span style="display: inline-block; margin: 2px; font-family: monospace; font-size: 11px; background: #e0f0e0; padding: 2px 4px;">{{ w }}</span>
+                            {% endfor %}
+                        </div>
+                        
+                        <div style="margin: 10px 0;">
+                            <strong>Selected Round Values:</strong>
+                            <table style="width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 5px;">
+                                <tr style="background: #d0d0d0;">
+                                    <th style="border: 1px solid #999; padding: 4px;">Round</th>
+                                    <th style="border: 1px solid #999; padding: 4px;">a</th>
+                                    <th style="border: 1px solid #999; padding: 4px;">b</th>
+                                    <th style="border: 1px solid #999; padding: 4px;">c</th>
+                                    <th style="border: 1px solid #999; padding: 4px;">d</th>
+                                    <th style="border: 1px solid #999; padding: 4px;">e</th>
+                                    <th style="border: 1px solid #999; padding: 4px;">f</th>
+                                    <th style="border: 1px solid #999; padding: 4px;">g</th>
+                                    <th style="border: 1px solid #999; padding: 4px;">h</th>
+                                </tr>
+                                {% for round in block.rounds %}
+                                <tr>
+                                    <td style="border: 1px solid #ccc; padding: 4px; font-family: monospace; font-size: 11px;">{{ round.round }}</td>
+                                    <td style="border: 1px solid #ccc; padding: 4px; font-family: monospace; font-size: 10px;">{{ round.a }}</td>
+                                    <td style="border: 1px solid #ccc; padding: 4px; font-family: monospace; font-size: 10px;">{{ round.b }}</td>
+                                    <td style="border: 1px solid #ccc; padding: 4px; font-family: monospace; font-size: 10px;">{{ round.c }}</td>
+                                    <td style="border: 1px solid #ccc; padding: 4px; font-family: monospace; font-size: 10px;">{{ round.d }}</td>
+                                    <td style="border: 1px solid #ccc; padding: 4px; font-family: monospace; font-size: 10px;">{{ round.e }}</td>
+                                    <td style="border: 1px solid #ccc; padding: 4px; font-family: monospace; font-size: 10px;">{{ round.f }}</td>
+                                    <td style="border: 1px solid #ccc; padding: 4px; font-family: monospace; font-size: 10px;">{{ round.g }}</td>
+                                    <td style="border: 1px solid #ccc; padding: 4px; font-family: monospace; font-size: 10px;">{{ round.h }}</td>
+                                </tr>
+                                {% endfor %}
+                            </table>
+                        </div>
+                        
+                        <div style="margin: 10px 0;">
+                            <strong>Hash Values After Block:</strong>
+                            {% for h in block.H_after %}
+                            <span style="display: inline-block; margin: 2px; font-family: monospace; font-size: 11px; background: #e0e0ff; padding: 2px 4px;">H{{ loop.index0 }}: {{ h }}</span>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                
+                <div class="step">
+                    <h4>Step 5: Final SHA-256 Hash</h4>
+                    <p style="word-break: break-all; font-weight: bold;">{{ output }}</p>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</body>
+</html>

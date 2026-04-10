@@ -1,6 +1,7 @@
 ﻿from flask import Flask, request, render_template, redirect, url_for, session
 import subprocess
 import math
+from sha256 import sha256
 
 app = Flask(__name__)
 app.secret_key = "crypto_lab_secret_key"
@@ -549,6 +550,48 @@ def primality_test():
     method = session.pop("primality_method", "1")
 
     return render_template("primality.html", output=output, error=error, code=code, number=number, method=method)
+
+@app.route("/sha256", methods=["GET", "POST"])
+def sha256_hash():
+    output = ""
+    error = ""
+    message = ""
+    input_length = ""
+    steps_data = {}
+    
+    # Read the code file
+    with open("sha256.py", "r", encoding="utf-8", errors="replace") as f:
+        code = f.read()
+
+    if request.method == "POST":
+        try:
+            message = request.form["message"]
+            
+            # Store form value in session to preserve it after redirect
+            session["sha256_message"] = message
+            
+            # Calculate input length
+            input_length = len(message) * 8
+            
+            # Generate hash
+            hash_output, steps = sha256(message)
+            
+            session["sha256_output"] = hash_output
+            session["sha256_input_length"] = input_length
+            session["sha256_steps"] = steps
+        except Exception as e:
+            session["sha256_error"] = f"Error: {str(e)}"
+        
+        return redirect(url_for("sha256_hash"))
+    
+    # Get from session and clear
+    output = session.pop("sha256_output", "")
+    error = session.pop("sha256_error", "")
+    message = session.pop("sha256_message", "")
+    input_length = session.pop("sha256_input_length", "")
+    steps_data = session.pop("sha256_steps", {})
+
+    return render_template("sha256.html", output=output, error=error, code=code, message=message, input_length=input_length, steps=steps_data)
 
 if __name__ == "__main__":
     import os
