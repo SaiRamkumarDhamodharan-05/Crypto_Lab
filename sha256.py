@@ -73,7 +73,7 @@ def sha256(message):
             s1 = right_rotate(W[t-2],17) ^ right_rotate(W[t-2],19) ^ (W[t-2] >> 10)
             W[t] = (W[t-16] + s0 + W[t-7] + s1) & 0xFFFFFFFF
 
-        block_data["W_expanded"] = [f'{w:08x}' for w in W[16:24]]  # Show first 8 expanded
+        block_data["W_expanded"] = [f'{w:08x}' for w in W[16:24]]  # Show W16-W23 only
 
         # =========================
         # Step 4: Compression Function

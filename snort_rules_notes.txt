@@ -1,0 +1,88 @@
+SNORT DETECTION RULES (CLEAN TEXT VERSION)
+
+Assumption:
+- HOME_NET is the protected network (example: 192.168.1.0/24).
+
+------------------------------------------------------------
+1) PORT SCAN DETECTION
+------------------------------------------------------------
+Definition:
+A port scan is when an attacker probes many ports on a host to discover open services.
+
+What it does:
+This rule alerts when a source sends many TCP SYN packets in a short time.
+
+Rule:
+alert tcp any any -> $HOME_NET any (msg:"PORTSCAN possible TCP SYN scan"; flags:S; flow:stateless; detection_filter:track by_src, count 20, seconds 3; classtype:attempted-recon; sid:1000001; rev:1;)
+
+Example output:
+[**] [1:1000001:1] PORTSCAN possible TCP SYN scan [**] {TCP} 10.10.10.5:52144 -> 192.168.1.20:443
+
+------------------------------------------------------------
+2) ICMP FLOOD DETECTION
+------------------------------------------------------------
+Definition:
+An ICMP flood is a DoS attack where a target is overwhelmed with ICMP echo requests.
+
+What it does:
+This rule alerts if one source sends too many ICMP echo requests quickly.
+
+Rule:
+alert icmp any any -> $HOME_NET any (msg:"ICMP flood detected"; itype:8; detection_filter:track by_src, count 100, seconds 1; classtype:attempted-dos; sid:1000002; rev:1;)
+
+Example output:
+[**] [1:1000002:1] ICMP flood detected [**] {ICMP} 10.10.10.8 -> 192.168.1.15
+
+------------------------------------------------------------
+3) SSH BRUTE FORCE DETECTION
+------------------------------------------------------------
+Definition:
+SSH brute force is repeated login-attempt activity against SSH (port 22) to guess credentials.
+
+What it does:
+This rule alerts when a source attempts many new TCP connections to SSH in a short period.
+
+Rule:
+alert tcp any any -> $HOME_NET 22 (msg:"SSH brute force suspected - multiple SSH connection attempts"; flags:S; flow:stateless; detection_filter:track by_src, count 10, seconds 60; classtype:attempted-admin; sid:1000003; rev:1;)
+
+Example output:
+[**] [1:1000003:1] SSH brute force suspected - multiple SSH connection attempts [**] {TCP} 203.0.113.45:49832 -> 192.168.1.12:22
+
+------------------------------------------------------------
+4) FIN SCAN DETECTION
+------------------------------------------------------------
+Definition:
+A FIN scan sends packets with only the FIN flag set to identify open or closed ports while trying to avoid simple filters.
+
+What it does:
+This rule alerts when a source sends multiple FIN-only probes.
+
+Rule:
+alert tcp any any -> $HOME_NET any (msg:"FIN scan detected"; flags:F; flow:stateless; detection_filter:track by_src, count 10, seconds 60; classtype:attempted-recon; sid:1000004; rev:1;)
+
+Example output:
+[**] [1:1000004:1] FIN scan detected [**] {TCP} 198.51.100.9:53321 -> 192.168.1.20:80
+
+------------------------------------------------------------
+5) NULL SCAN DETECTION
+------------------------------------------------------------
+Definition:
+A NULL scan sends TCP packets with no flags set to map port behavior while evading basic checks.
+
+What it does:
+This rule alerts when no-flag TCP packets are repeatedly sent by one source.
+
+Rule:
+alert tcp any any -> $HOME_NET any (msg:"NULL scan detected"; flags:0; flow:stateless; detection_filter:track by_src, count 10, seconds 60; classtype:attempted-recon; sid:1000005; rev:1;)
+
+Example output:
+[**] [1:1000005:1] NULL scan detected [**] {TCP} 198.51.100.9:53410 -> 192.168.1.20:443
+
+------------------------------------------------------------
+WHAT [ ] MEANS IN SNORT OUTPUT
+------------------------------------------------------------
+- [**] is a visual separator used by Snort in alerts.
+- [1:1000001:1] means [GID:SID:REV]
+  - GID: Generator ID (usually 1 for text rules)
+  - SID: Signature ID (unique rule number)
+  - REV: Rule revision/version

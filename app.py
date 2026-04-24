@@ -572,8 +572,8 @@ def sha256_hash():
             # Store form value in session to preserve it after redirect
             session["sha256_message"] = message
             
-            # Calculate input length
-            input_length = len(message) * 8
+            # Calculate input length in bits based on actual UTF-8 bytes hashed
+            input_length = len(message.encode("utf-8")) * 8
             
             # Generate hash
             hash_output, steps = sha256(message)
